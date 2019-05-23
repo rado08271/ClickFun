@@ -15,7 +15,8 @@ public class Game implements Runnable{
     private Room room;
     private Assets assets;
 
-    int attempts;
+    private int prevX, prevY;
+    private int attempts;
 
     private Color[] colors = {Color.BLUE,Color.CYAN,Color.RED,Color.GREEN};
 
@@ -36,7 +37,7 @@ public class Game implements Runnable{
      * this function runs once the game starts (when thread is opened)
      */
     private void init(){
-        display = new Display( (width*tile)+tile/2, (height*tile)+tile+8, "new");
+        display = new Display( (width*tile)+tile/2, (height*tile)+tile+8, "Level 1");
         assets = new Assets();
         display.getFrame().addMouseListener(mouseInput);
         display.getCanvas().addMouseListener(mouseInput);
@@ -45,7 +46,7 @@ public class Game implements Runnable{
     }
 
     /**
-     * function prints any given spritesheet as map
+     * function prints any given spritesheet
      */
     private void printToScreen(){
         for(int i = 0;i<height ;i++){
@@ -57,41 +58,84 @@ public class Game implements Runnable{
         }
     }
 
+
+    public int[][] fieldWithZero(){
+        int[][] toFill = new int[width][height];
+        for (int i = 0; i < width; i++){
+            for (int x = 0; x < height; x++){
+                toFill[i][x] = 0;
+            }
+        }
+        return toFill;
+    }
+
+    public int[][] fromPos(int yTile, int xTile, int clickedTileValue, int[][] assign){
+
+        for (int y = yTile; y >= 0; y--){
+            if( field[y][xTile] == clickedTileValue){
+                assign[y][xTile] = 1;
+            }else{
+                break;
+            }
+        }
+        for (int y = yTile; y < height; y++){
+            if( field[y][xTile] == clickedTileValue){
+                assign[y][xTile] = 1;
+            }else{
+                break;
+            }
+        }
+        for (int x = xTile; x >= 0; x--){
+            if( field[yTile][x] == clickedTileValue){
+                assign[yTile][x] = 1;
+            }else{
+                break;
+            }
+        }
+        for (int x = xTile; x < height; x++){
+            if( field[yTile][x] == clickedTileValue){
+                assign[yTile][x] = 1;
+            }else{
+                break;
+            }
+        }
+        return assign;
+    }
     /**
      * this fucntion chnges everything in a field it's a main game function
      * and takes care of a room changes all the tiles that the mouse is touching
      * @param xTile gives actual xTile you clicked on
      * @param yTile gives actual yTile you clicked on
      */
-    //FIXME problem in some cases! try to resolve
-    //doing it the stupid way...not efficient...meybe change later..
     private void changeNaighbours(int xTile,int yTile){
         int clickedTileValue = field[yTile][xTile];
-        int yStart = 0;
-        int yEnd = 0;
+        System.out.println("Clicked: " + clickedTileValue);
 
-        //for each line find how many to change
-        for (int y = 0; y < height; y++) {
-            int xStart = xTile;
-            int xEnd = xTile;
+        int assign[][] = fieldWithZero();
+        assign = fromPos(yTile, xTile, clickedTileValue, assign);
 
-            //start x
-            while(xStart>0){
-                if(field[y][xStart] == clickedTileValue) xStart--;
-                else break;
-            }
-            //end x
-            while(xEnd<width){
-                if(field[y][xEnd] == clickedTileValue) xEnd++;
-                else break;
-            }
-
-            for (int x = xStart; x < xEnd; x++) {
-                //if neighbour is same increse by one
-                if(field[y][x] == clickedTileValue){
-                    field[y][x]++;
+        for (int i = 0; i < 4; i++) {
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    if (assign[y][x] == 1) {
+                        assign = fromPos(y, x, clickedTileValue, assign);
+                    }
                 }
             }
+        }
+
+        for (int i = 0; i < height; i++){
+            for (int x = 0; x < width; x++){
+                if (assign[i][x] == 1){
+                    try {
+                        field[i][x]++;
+                    } catch (NullPointerException e){
+                        e.printStackTrace();
+                    }
+                }
+                System.out.print(assign[i][x] + " ");
+            }
+            System.out.println();
         }
 
         //if you are ou of field bounds set to 0
@@ -112,13 +156,21 @@ public class Game implements Runnable{
         int getXTile = mouseInput.x/room.getTileDimensions();
         int getYTile = mouseInput.y/room.getTileDimensions();
 
-        try{
-            changeNaighbours(getXTile,getYTile);
-        } catch (IndexOutOfBoundsException e){
-            System.out.print("Problem Occured! You Clicked elsewhere!");
-            e.printStackTrace();
-            System.exit(1);
+        if(!(getXTile == prevX && getYTile == prevY)){
+            try{
+                changeNaighbours(getXTile,getYTile);
+                attempts++;
+            } catch (IndexOutOfBoundsException e){
+                System.out.print("Problem Occured! You Clicked elsewhere!");
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }else{
+            System.out.println("You clicked the same tile!");
         }
+
+        prevX = getXTile;
+        prevY = getYTile;
 
     }
 
@@ -142,7 +194,6 @@ public class Game implements Runnable{
         if(mouseInput.isClicked == true) {
             game();
             mouseInput.isClicked = false;
-            attempts++;
         }
     }
 

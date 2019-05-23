@@ -9,9 +9,7 @@ public class MouseInput implements MouseListener, MouseMotionListener{
     public int x,y;
     public boolean isClicked = false;
 
-    MouseInput(){
-
-    }
+    MouseInput(){}
 
     @Override
     public void mouseClicked(MouseEvent e) {
@@ -20,7 +18,6 @@ public class MouseInput implements MouseListener, MouseMotionListener{
         if(e.getButton() == MouseEvent.BUTTON1){
             isClicked = true;
         }
-//        isClicked = false;
     }
 
     @Override
